@@ -69,7 +69,7 @@ def main(opt):
 
                 # Tracking
                 deep_sort.detection_to_deepsort(yoloOutput, frame)
-
+                temp_counter = 0
                 # The homography matrix is applied to the center of the lower side of the bbox.
                 for i, obj in enumerate(yoloOutput):
                     xyxy = [obj['bbox'][0][0], obj['bbox'][0][1], obj['bbox'][1][0], obj['bbox'][1][1]]
@@ -77,7 +77,26 @@ def main(opt):
                     y_center = xyxy[3]
                     
                     if obj['label'] == 'player':
-                        coords = transform_matrix(M, (x_center, y_center), (h, w), (gt_h, gt_w))
+                        temp_coords = transform_matrix(M, (x_center, y_center), (h, w), (gt_h, gt_w))
+                        
+                        if temp_counter == 0:
+                            coords1 = temp_coords
+                            temp_counter += 1
+                        if (abs(temp_coords[0]-coords1[0]) > 30) or (abs(temp_coords[1]-coords1[1]) > 30):
+                            tempX = coords1[0]
+                            tempY = coords1[1]
+                            if temp_coords[0] > coords1[0]: tempX += 30
+                            elif temp_coords[0] < coords1[0]: tempX -= 30
+                            if temp_coords[1] > coords1[1]: tempY += 30
+                            elif temp_coords[1] < coords1[1]: tempY -= 30
+                            coords = (tempX, tempY)
+                            coords1 = coords
+                        else:
+                            coords = temp_coords
+                        
+                        coords = temp_coords
+                        # Test
+                        #print(coords[1])
                         try:
                             color = detect_color(main_frame[xyxy[1]:xyxy[3], xyxy[0]:xyxy[2]])
                             cv2.circle(bg_img, coords, bg_ratio + 1, color, -1)
