@@ -100,7 +100,11 @@ def detect_color(img):
     
     list_of_colors = list(pallete.values())
     assigned_color = closest_color(list_of_colors, detected_color)[0]
-    assigned_color = (int(assigned_color[2]), int(assigned_color[1]), int(assigned_color[0]))
+    if int(assigned_color[1]) == 128:
+    	assigned_color = (int(list_of_colors[0][2]), int(list_of_colors[0][1]), int(list_of_colors[0][0]))
+    else: 
+    	assigned_color = (int(assigned_color[2]), int(assigned_color[1]), int(assigned_color[0]))
+
 
     if assigned_color == (0, 0, 0):
         assigned_color = (128, 128, 128)

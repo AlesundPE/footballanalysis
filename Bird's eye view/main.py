@@ -98,8 +98,15 @@ def main(opt):
                         # Test
                         #print(coords[1])
                         try:
+                            font = cv2.FONT_HERSHEY_SIMPLEX
                             color = detect_color(main_frame[xyxy[1]:xyxy[3], xyxy[0]:xyxy[2]])
                             cv2.circle(bg_img, coords, bg_ratio + 1, color, -1)
+                            if color[1] >= 250 and color[2] >=250 :
+                            	cv2.putText(bg_img, 'ENG', coords, font, 0.5, (0,0,255),1,cv2.LINE_AA)
+                            elif color[0] >= 80 and color[2] < 80:
+                            	cv2.putText(bg_img, 'ITA', coords, font, 0.5, (255,255,255),1,cv2.LINE_AA)
+                            #else:
+                            	#print(color)
                         except:
                           pass
                     elif obj['label'] == 'ball':
