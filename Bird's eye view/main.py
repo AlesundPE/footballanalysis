@@ -103,8 +103,21 @@ def main(opt):
                             cv2.circle(bg_img, coords, bg_ratio + 1, color, -1)
                             if color[1] >= 250 and color[2] >=250 :
                             	cv2.putText(bg_img, 'ENG', coords, font, 0.5, (0,0,255),1,cv2.LINE_AA)
+                            	cv2.circle(bg_img, coords, bg_ratio + 1, color, -1)
+                            	plot_one_box(xyxy, frame, (255, 255, 255), label="ENG")
                             elif color[0] >= 80 and color[2] < 80:
                             	cv2.putText(bg_img, 'ITA', coords, font, 0.5, (255,255,255),1,cv2.LINE_AA)
+                            	cv2.circle(bg_img, coords, bg_ratio + 1, color, -1)
+                            	plot_one_box(xyxy, frame, (192, 0, 0), label="ITA")
+                            #Temporal fixed for yellow and grey
+                            elif color == (128, 128, 128):
+                            	cv2.putText(bg_img, 'ITA', coords, font, 0.5, (255,255,255),1,cv2.LINE_AA)
+                            	cv2.circle(bg_img, coords, bg_ratio + 1, (192,0,0) , -1)
+                            	plot_one_box(xyxy, frame, (192, 0, 0), label="ITA")
+                            elif color == (0, 192, 192):
+                            	cv2.putText(bg_img, 'ITA', coords, font, 0.5, (255,255,255),1,cv2.LINE_AA)
+                            	cv2.circle(bg_img, coords, bg_ratio + 1, (192,0,0) , -1)
+                            	plot_one_box(xyxy, frame, (192, 0, 0), label="ITA")
                             #else:
                             	#print(color)
                         except:
