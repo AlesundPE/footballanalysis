@@ -10,7 +10,7 @@ import os
 import cv2
 import numpy as np
 import sys
-
+import math
 
 
 def main(opt):
@@ -25,6 +25,8 @@ def main(opt):
 
     w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    
+    temp_counter = 0
 
     # Save output
     if opt.save:
@@ -44,13 +46,17 @@ def main(opt):
 
 
     frame_num = 0
+    
+    ballCoords = (0,0)
+    teamLabel = 'None'
+    
 
     # Black Image (Soccer Field)
     bg_ratio = int(np.ceil(w/(3*115)))
     gt_img = cv2.imread('./inference/black.jpg')
     gt_img = cv2.resize(gt_img,(115*bg_ratio, 74*bg_ratio))
     gt_h, gt_w, _ = gt_img.shape
-
+    
 
     while(cap.isOpened()):
         
@@ -66,22 +72,32 @@ def main(opt):
                 M, warped_image = perspective_transform.homography_matrix(main_frame)
 
             if yoloOutput:
+            	
+                print(yoloOutput)
+            
+                distance = 500.0
+                histDist = 500.0
+                
+                temp_text = teamLabel + ' is attacking'
+                
 
                 # Tracking
                 deep_sort.detection_to_deepsort(yoloOutput, frame)
-                temp_counter = 0
                 # The homography matrix is applied to the center of the lower side of the bbox.
                 for i, obj in enumerate(yoloOutput):
                     xyxy = [obj['bbox'][0][0], obj['bbox'][0][1], obj['bbox'][1][0], obj['bbox'][1][1]]
                     x_center = (xyxy[0] + xyxy[2])/2 
                     y_center = xyxy[3]
                     
+                    
                     if obj['label'] == 'player':
                         temp_coords = transform_matrix(M, (x_center, y_center), (h, w), (gt_h, gt_w))
                         
+                        '''
                         if temp_counter == 0:
                             coords1 = temp_coords
                             temp_counter += 1
+                            coords = temp_coords
                         if (abs(temp_coords[0]-coords1[0]) > 30) or (abs(temp_coords[1]-coords1[1]) > 30):
                             tempX = coords1[0]
                             tempY = coords1[1]
@@ -93,8 +109,9 @@ def main(opt):
                             coords1 = coords
                         else:
                             coords = temp_coords
-                        
+                        '''
                         coords = temp_coords
+
                         # Test
                         #print(coords[1])
                         try:
@@ -105,29 +122,55 @@ def main(opt):
                             	cv2.putText(bg_img, 'ENG', coords, font, 0.5, (0,0,255),1,cv2.LINE_AA)
                             	cv2.circle(bg_img, coords, bg_ratio + 1, color, -1)
                             	plot_one_box(xyxy, frame, (255, 255, 255), label="ENG")
+                            	if ballCoords != (0,0):
+                            	    distance = math.sqrt((coords[0]-ballCoords[0])**2 + (coords[1]-ballCoords[1])**2)
+                            	    teamLabel = 'ENG'
+                            	
+                            	# For attacking & defensing
+                            	
                             elif color[0] >= 80 and color[2] < 80:
                             	cv2.putText(bg_img, 'ITA', coords, font, 0.5, (255,255,255),1,cv2.LINE_AA)
                             	cv2.circle(bg_img, coords, bg_ratio + 1, color, -1)
                             	plot_one_box(xyxy, frame, (192, 0, 0), label="ITA")
+                            	if ballCoords != (0,0):
+                            	    distance = math.sqrt((coords[0]-ballCoords[0])**2 + (coords[1]-ballCoords[1])**2)
+                            	    teamLabel = 'ITA'
+                            	
                             #Temporal fixed for yellow and grey
                             elif color == (128, 128, 128):
                             	cv2.putText(bg_img, 'ITA', coords, font, 0.5, (255,255,255),1,cv2.LINE_AA)
                             	cv2.circle(bg_img, coords, bg_ratio + 1, (192,0,0) , -1)
                             	plot_one_box(xyxy, frame, (192, 0, 0), label="ITA")
+                            	if ballCoords != (0,0):
+                            	    distance = math.sqrt((coords[0]-ballCoords[0])**2 + (coords[1]-ballCoords[1])**2)
+                            	    teamLabel = 'ITA'
+                            	
                             elif color == (0, 192, 192):
                             	cv2.putText(bg_img, 'ITA', coords, font, 0.5, (255,255,255),1,cv2.LINE_AA)
                             	cv2.circle(bg_img, coords, bg_ratio + 1, (192,0,0) , -1)
                             	plot_one_box(xyxy, frame, (192, 0, 0), label="ITA")
-                            #else:
-                            	#print(color)
+                            	if ballCoords != (0,0):
+                            	    distance = math.sqrt((coords[0]-ballCoords[0])**2 + (coords[1]-ballCoords[1])**2)
+                            	    teamLabel = 'ITA'
+                            	
+                            
+                            if distance < histDist:
+                                histDist = distance
+                                temp_text = teamLabel + ' is attacking'
+ 
+                            
                         except:
                           pass
                     elif obj['label'] == 'ball':
                         coords = transform_matrix(M, (x_center, y_center), (h, w), (gt_h, gt_w))
                         cv2.circle(bg_img, coords, bg_ratio + 1, (102, 0, 102), -1)
                         plot_one_box(xyxy, frame, (102, 0, 102), label="ball")
+                        ballCoords = coords
+                        
+                cv2.putText(frame, temp_text, (40, 400), font, 2, (255, 255, 255), 1, cv2.LINE_AA)
             else:
                 deep_sort.deepsort.increment_ages()
+                
 
             frame[frame.shape[0]-bg_img.shape[0]:, frame.shape[1]-bg_img.shape[1]:] = bg_img  
             
@@ -141,6 +184,9 @@ def main(opt):
                 out.write(frame)
 
             frame_num += 1
+            
+            temp_counter += 1
+            
         else:
             break
 
